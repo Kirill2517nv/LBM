@@ -1,18 +1,24 @@
 cmake_minimum_required(VERSION 3.12)
 
 
-set(PROJECT_NAME LBM_Core)
+set(PROJECT_NAME LBMCore)
 
 set(PUBLIC_INCLUDES
-
+	includes/UIModule.hpp
+	includes/Application.hpp
+	includes/Log.hpp
+	includes/Window.hpp
+	includes/Event.hpp
 )
 
 set(PRIVATE_INCLUDES
-
+	
 )
 
 set(PRIVATE_SOURCES
-	src/main.cpp
+	src/UIModule.cpp
+	src/Application.cpp
+	src/Window.cpp
 )
 
 set(ALL_SOURCES
@@ -24,7 +30,7 @@ set(ALL_SOURCES
 
 
 add_library(${PROJECT_NAME} STATIC
-	${ALL_SOURCES}
+${ALL_SOURCES}
 )
 
 
