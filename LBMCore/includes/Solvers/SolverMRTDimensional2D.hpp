@@ -4,6 +4,7 @@
 namespace Engine {
 	class SolverMRTDimensional2D : public Engine::BasicSolver2D{
 	public:
+		SolverMRTDimensional2D() = default;
 		SolverMRTDimensional2D(int Nx, int Ny, double T, int numspec);
 		virtual void SolverMRTDimensional2D::set_initial_conditions() override;
 		virtual void SolverMRTDimensional2D::set_border_conditions() override;

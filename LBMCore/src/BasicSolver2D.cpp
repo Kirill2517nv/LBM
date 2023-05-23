@@ -5,8 +5,34 @@
 #include <fstream>
 
 Engine::BasicSolver2D::BasicSolver2D(int Nx, int Ny, double T, int numspec):
-    mNx(Nx), mNy(Ny), temperature(T), number_of_species(numspec)
+    mNx(Nx), 
+    mNy(Ny), 
+    temperature(T), 
+    number_of_species(numspec),
+    rhomulticomponent(numspec, std::vector<std::vector<double>>(Nx + 2, std::vector<double>(Ny + 2))),
+    critical_temperatures(numspec),
+    critical_rho(numspec),
+    critical_pressures(numspec),
+    molarmass(numspec),
+    omega(numspec),
+    gamma(numspec),
+    ux_spec(numspec, std::vector<std::vector<double>>(Nx + 2, std::vector<double>(Ny + 2))),
+    uy_spec(numspec, std::vector<std::vector<double>>(Nx + 2, std::vector<double>(Ny + 2))),
+    gamma_multiply_rho(std::vector<std::vector<double>>(Nx + 2, std::vector<double>(Ny + 2))),
+    rho(std::vector<std::vector<double>>(Nx + 2, std::vector<double>(Ny + 2))),
+    pressure(std::vector<std::vector<double>>(Nx + 2, std::vector<double>(Ny + 2))),
+    ux(std::vector<std::vector<double>>(Nx + 2, std::vector<double>(Ny + 2))),
+    uy(std::vector<std::vector<double>>(Nx + 2, std::vector<double>(Ny + 2))),
+    dux_force(std::vector<std::vector<double>>(Nx + 2, std::vector<double>(Ny + 2))),
+    duy_force(std::vector<std::vector<double>>(Nx + 2, std::vector<double>(Ny + 2))),
+    dux_force_spec(numspec, std::vector<std::vector<double>>(Nx + 2, std::vector<double>(Ny + 2))),
+    duy_force_spec(numspec, std::vector<std::vector<double>>(Nx + 2, std::vector<double>(Ny + 2))),
+    effrho(std::vector<std::vector<double>>(Nx + 2, std::vector<double>(Ny + 2))),
+    sqr_effrho(std::vector<std::vector<double>>(Nx + 2, std::vector<double>(Ny + 2))),
+    fmulticomponent(numspec, std::vector<std::vector<std::vector<double>>>
+        (9, std::vector<std::vector<double>>(Nx + 2, std::vector<double>(Ny + 2))))
 {
+
 }
 
 void Engine::BasicSolver2D::SaveVTKFile(int tStep)

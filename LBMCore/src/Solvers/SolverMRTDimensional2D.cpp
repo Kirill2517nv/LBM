@@ -2,14 +2,62 @@
 
 namespace Engine {
 	SolverMRTDimensional2D::SolverMRTDimensional2D(int Nx, int Ny, double T, int numspec) :
-		BasicSolver2D(Nx, Ny, T, numspec)
+		BasicSolver2D(Nx, Ny, T, numspec),
+		s_i(numspec),
+		qx_spec(numspec, std::vector<std::vector<double>>(Nx + 2, std::vector<double>(Ny + 2))),
+		qy_spec(numspec, std::vector<std::vector<double>>(Nx + 2, std::vector<double>(Ny + 2))),
+		pxx_spec(numspec, std::vector<std::vector<double>>(Nx + 2, std::vector<double>(Ny + 2))),
+		pxy_spec(numspec, std::vector<std::vector<double>>(Nx + 2, std::vector<double>(Ny + 2))),
+		e_spec(numspec, std::vector<std::vector<double>>(Nx + 2, std::vector<double>(Ny + 2))),
+		epsilon_spec(numspec, std::vector<std::vector<double>>(Nx + 2, std::vector<double>(Ny + 2)))
 	{
+		double f_eq[9];
+		for (int numspec = 0; numspec < number_of_species; numspec++)
+		{
+			for (int i = 1; i <= mNx; i++)
+			{
+				for (int j = 1; j <= mNy; j++)
+				{
+					eq_func(rhomulticomponent[numspec][i][j], ux_spec[numspec][i][j], uy_spec[numspec][i][j], f_eq);
+					for (int k = 0; k < 9; k++)
+					{
+						fmulticomponent[numspec][k][i][j] = f_eq[k];
+					}
+				}
+			}
+		}
+		Bi = { b0 * R * critical_temperatures[0] / (critical_pressures[0] * molarmass[0]),
+			 b0 * R * critical_temperatures[1] / (critical_pressures[1] * molarmass[1]) };
+		Ai = { R * critical_temperatures[0] / (sqrt(critical_pressures[0]) * molarmass[0]),
+			 R * critical_temperatures[1] / (sqrt(critical_pressures[1]) * molarmass[1]) };
+		k_ij = { {0., 0.03}, {0.03, 0.} };
+
+
 		set_initial_conditions();
 	}
 
 
 	void SolverMRTDimensional2D::set_initial_conditions()
 	{
+		double rho0up = 5; // 2.45
+		double rho0down = 1; // 0.048
+		double rho1up = 2.5; //0.056
+		double rho1down = 0.5; //0.044
+		double radius = 5;
+		//droplet
+	for (int i = 0; i <= mNx + 1; i++)
+	{
+		for (int j = 0; j <= mNy + 1; j++)
+		{
+			rhomulticomponent[0][i][j] = rho0down;
+			rhomulticomponent[1][i][j] = rho1down;
+			if (i <= 3)
+			{
+				rhomulticomponent[0][i][j] = rho0up;
+				rhomulticomponent[1][i][j] = rho1up;
+			}
+		}
+	}
 	}
 
 
@@ -204,9 +252,8 @@ namespace Engine {
 						(sqr_effrho[i + 1][j + 1] + sqr_effrho[i - 1][j + 1] - sqr_effrho[i + 1][j - 1] - sqr_effrho[i - 1][j - 1])));
 				duy_force[i][j] = force_y / rho[i][j];
 				for (int numspec = 0; numspec < number_of_species; numspec++) {
-					hi[numspec][i][j] = gamma[numspec] / gamma_multiply_rho[i][j];
-					dux_force_spec[numspec][i][j] = force_x * hi[numspec][i][j];
-					duy_force_spec[numspec][i][j] = force_y * hi[numspec][i][j];
+					dux_force_spec[numspec][i][j] = force_x * gamma[numspec] / gamma_multiply_rho[i][j];
+					duy_force_spec[numspec][i][j] = force_y * gamma[numspec] / gamma_multiply_rho[i][j];
 				}
 
 			}

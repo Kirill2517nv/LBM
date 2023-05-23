@@ -21,6 +21,9 @@ namespace Engine {
 		virtual void calculate_force() = 0;
 		virtual void collision_step() = 0;
 
+		const int get_Nx() { return mNx; }
+		const int get_Ny() { return mNy; }
+		std::vector<std::vector<std::vector<double>>> get_rhomulticomponent() { return rhomulticomponent; }
 
 	protected:
 		virtual void eq_func(double rho, double ux, double uy, double* f_eq);
@@ -48,7 +51,6 @@ namespace Engine {
 		std::vector<std::vector<double>> uy; // Projection of the total fluid velocity on the y-axis at each node
 		std::vector<std::vector<double>> dux_force; // Projection of the total force on the x-axis at each node
 		std::vector<std::vector<double>> duy_force; // Projection of the total force on the y-axis at each node
-		std::vector<std::vector<std::vector<double>>> hi; // Coefficient of entry of the force of a certain component in each node
 		std::vector<std::vector<std::vector<double>>> ux_spec; // Projection of the component of fluid velocity on the x-axis at each node
 		std::vector<std::vector<std::vector<double>>> uy_spec; // Projection of the component of fluid velocity on the y-axis at each node
 		std::vector<std::vector<std::vector<double>>> dux_force_spec; // Projection of the component force on the x-axis at each node

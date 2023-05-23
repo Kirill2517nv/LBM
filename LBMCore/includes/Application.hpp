@@ -2,7 +2,7 @@
 
 #include <memory>
 #include "Event.hpp"
-
+#include "BasicSolver2D.hpp"
 
 
 
@@ -18,7 +18,8 @@ namespace Engine {
 		Application& operator=(Application&&) = delete;
 
 
-		virtual int start(unsigned int window_width, unsigned int window_height, const char* title);
+		virtual int start(int Nx, int Ny, double T, int numspec, 
+			unsigned int window_width = 1600, unsigned int window_height = 900, const char* title = "Solver");
 		
 		void close() { mbCloseWindow = true; };
 
@@ -32,6 +33,8 @@ namespace Engine {
 		std::shared_ptr<class Window> mpWindow;
 		EventDispatcher mEventDispatcher;
 		bool mbCloseWindow = false;
-
+	protected:
+		std::shared_ptr<BasicSolver2D> Solver;
+		double* rho;
 	};
 }

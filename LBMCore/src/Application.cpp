@@ -12,6 +12,7 @@
 #include <glad/glad.h>
 #include <imgui/imgui.h>
 #include <GLFW/glfw3.h>
+#include "Solvers/SolverMRTDimensional2D.hpp"
 
 
 
@@ -27,7 +28,7 @@ namespace Engine {
 		LOG_INFO("Closing application");
 	}
 
-	int Application::start(unsigned int window_width, unsigned int window_height, const char* title)
+	int Application::start(int Nx, int Ny, double T, int numspec, unsigned int window_width, unsigned int window_height, const char* title)
 	{	
 		// making a window
 		mpWindow = std::make_shared<Window>(title, window_width, window_height);
@@ -60,6 +61,8 @@ namespace Engine {
 			}
 		);
 		
+		Solver = std::make_shared<SolverMRTDimensional2D> (Nx, Ny, T, numspec);
+		Solver->set_initial_conditions();
 		// main cycle
 		while (!mbCloseWindow) {
 			draw();
