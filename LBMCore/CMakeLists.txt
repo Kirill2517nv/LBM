@@ -9,6 +9,8 @@ set(PUBLIC_INCLUDES
 	includes/Log.hpp
 	includes/Window.hpp
 	includes/Event.hpp
+	includes/BasicSolver2D.hpp
+	includes/Solvers/SolverMRTDimensional2D.hpp
 )
 
 set(PRIVATE_INCLUDES
@@ -19,6 +21,8 @@ set(PRIVATE_SOURCES
 	src/UIModule.cpp
 	src/Application.cpp
 	src/Window.cpp
+	src/BasicSolver2D.cpp
+	src/Solvers/SolverMRTDimensional2D.cpp
 )
 
 set(ALL_SOURCES
