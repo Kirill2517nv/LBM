@@ -62,9 +62,14 @@ namespace Engine {
 		);
 		
 		Solver = std::make_shared<SolverMRTDimensional2D> (Nx, Ny, T, numspec);
-		Solver->set_initial_conditions();
 		// main cycle
 		while (!mbCloseWindow) {
+			time++;
+			Solver->LBM_Step();
+			if (time % 1 == 0)
+			{
+				Solver->check_rho();
+			}
 			draw();
 		}
 		mpWindow = nullptr;

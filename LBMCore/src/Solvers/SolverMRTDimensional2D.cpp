@@ -1,16 +1,13 @@
 #include "Solvers/SolverMRTDimensional2D.hpp"
+#include "Log.hpp"
 
 namespace Engine {
 	SolverMRTDimensional2D::SolverMRTDimensional2D(int Nx, int Ny, double T, int numspec) :
 		BasicSolver2D(Nx, Ny, T, numspec),
-		s_i(numspec),
-		qx_spec(numspec, std::vector<std::vector<double>>(Nx + 2, std::vector<double>(Ny + 2))),
-		qy_spec(numspec, std::vector<std::vector<double>>(Nx + 2, std::vector<double>(Ny + 2))),
-		pxx_spec(numspec, std::vector<std::vector<double>>(Nx + 2, std::vector<double>(Ny + 2))),
-		pxy_spec(numspec, std::vector<std::vector<double>>(Nx + 2, std::vector<double>(Ny + 2))),
-		e_spec(numspec, std::vector<std::vector<double>>(Nx + 2, std::vector<double>(Ny + 2))),
-		epsilon_spec(numspec, std::vector<std::vector<double>>(Nx + 2, std::vector<double>(Ny + 2)))
+		s_i(std::vector<double>(numspec))
 	{
+		
+		set_initial_conditions();
 		double f_eq[9];
 		for (int numspec = 0; numspec < number_of_species; numspec++)
 		{
@@ -26,38 +23,35 @@ namespace Engine {
 				}
 			}
 		}
-		Bi = { b0 * R * critical_temperatures[0] / (critical_pressures[0] * molarmass[0]),
-			 b0 * R * critical_temperatures[1] / (critical_pressures[1] * molarmass[1]) };
-		Ai = { R * critical_temperatures[0] / (sqrt(critical_pressures[0]) * molarmass[0]),
-			 R * critical_temperatures[1] / (sqrt(critical_pressures[1]) * molarmass[1]) };
-		k_ij = { {0., 0.03}, {0.03, 0.} };
-
-
-		set_initial_conditions();
 	}
+
 
 
 	void SolverMRTDimensional2D::set_initial_conditions()
 	{
-		double rho0up = 5; // 2.45
-		double rho0down = 1; // 0.048
-		double rho1up = 2.5; //0.056
-		double rho1down = 0.5; //0.044
-		double radius = 5;
-		//droplet
-	for (int i = 0; i <= mNx + 1; i++)
-	{
-		for (int j = 0; j <= mNy + 1; j++)
+		//LOG_INFO("set_initial_conditions");
+		s_i = { -0.04183, -0.154 };
+		omega = { 0.2514, 0.01142 };
+		critical_pressures = { 3.3675e6, 4.5992e6 }; /* [Pa] */
+		critical_temperatures = { 469.7, 190.564 }; /* [k] */
+		critical_rho = { 232, 162.66 }; /*[kg/m^3]*/
+		molarmass = { 0.07215, 0.016 }; /*[kg/mol]*/
+		gamma = { 1., 0.432 };
+		k_ij = { {0., 0.03}, {0.03, 0.} };
+		Bi = { b0 * R * critical_temperatures[0] / (critical_pressures[0] * molarmass[0]),
+		 b0 * R * critical_temperatures[1] / (critical_pressures[1] * molarmass[1]) };
+		Ai = { R * critical_temperatures[0] / (sqrt(critical_pressures[0]) * molarmass[0]),
+			 R * critical_temperatures[1] / (sqrt(critical_pressures[1]) * molarmass[1]) };
+		double rho_mixture = 260;
+		for (int i = 1; i <= mNx; i++)
 		{
-			rhomulticomponent[0][i][j] = rho0down;
-			rhomulticomponent[1][i][j] = rho1down;
-			if (i <= 3)
+			for (int j = 1; j <= mNy; j++)
 			{
-				rhomulticomponent[0][i][j] = rho0up;
-				rhomulticomponent[1][i][j] = rho1up;
+				//rhomulticomponent[0][i][j] = critical_rho[0] + rand() % 10;
+				rhomulticomponent[0][i][j] = rho_mixture / (1. + 0.3 * molarmass[1] / (0.7 * molarmass[0])) + rand() % 10;
+				rhomulticomponent[1][i][j] = rho_mixture / (1. + 0.7 * molarmass[0] / (0.3 * molarmass[1])) + rand() % 10;
 			}
 		}
-	}
 	}
 
 
@@ -65,10 +59,6 @@ namespace Engine {
 	{
 		for (int numspec = 0; numspec < number_of_species; numspec++)
 		{
-			fmulticomponent[numspec][5][0][0] = fmulticomponent[numspec][7][1][1];
-			fmulticomponent[numspec][6][mNx + 1][0] = fmulticomponent[numspec][8][mNx][1];
-			fmulticomponent[numspec][7][mNx + 1][mNy + 1] = fmulticomponent[numspec][5][mNx][mNy];
-			fmulticomponent[numspec][8][0][mNy + 1] = fmulticomponent[numspec][6][1][mNy];
 			for (int i = 1; i < mNy + 1; i++)
 			{
 				fmulticomponent[numspec][1][0][i] = fmulticomponent[numspec][3][1][i];
@@ -102,9 +92,7 @@ namespace Engine {
 				{
 					for (int j = 1; j <= mNy; j++)
 					{
-						int i_adj = i - dx[k];
-						int j_adj = j - dy[k];
-						f_temp[i][j] = fmulticomponent[numspec][k][i_adj][j_adj];
+						f_temp[i][j] = fmulticomponent[numspec][k][i - dx[k]][j - dy[k]];
 
 					}
 				}
@@ -124,26 +112,15 @@ namespace Engine {
 				uy[i][j] = 0;
 				for (int numspec = 0; numspec < number_of_species; numspec++)
 				{
-					e_spec[numspec][i][j] = 0;
-					epsilon_spec[numspec][i][j] = 0;
-					qx_spec[numspec][i][j] = 0;
-					qy_spec[numspec][i][j] = 0;
-					pxx_spec[numspec][i][j] = 0;
-					pxy_spec[numspec][i][j] = 0;
 					rhomulticomponent[numspec][i][j] = 0;
 					ux_spec[numspec][i][j] = 0;
 					uy_spec[numspec][i][j] = 0;
 					for (int k = 0; k < 9; k++)
 					{
 						rhomulticomponent[numspec][i][j] += fmulticomponent[numspec][k][i][j];
-						e_spec[numspec][i][j] += M[1][k] * fmulticomponent[numspec][k][i][j];
-						epsilon_spec[numspec][i][j] += M[2][k] * fmulticomponent[numspec][k][i][j];
 						ux_spec[numspec][i][j] += M[3][k] * fmulticomponent[numspec][k][i][j];
-						qx_spec[numspec][i][j] += M[4][k] * fmulticomponent[numspec][k][i][j];
 						uy_spec[numspec][i][j] += M[5][k] * fmulticomponent[numspec][k][i][j];
-						qy_spec[numspec][i][j] += M[6][k] * fmulticomponent[numspec][k][i][j];
-						pxx_spec[numspec][i][j] += M[7][k] * fmulticomponent[numspec][k][i][j];
-						pxy_spec[numspec][i][j] += M[8][k] * fmulticomponent[numspec][k][i][j];
+
 					}
 					gamma_multiply_rho[i][j] += gamma[numspec] * rhomulticomponent[numspec][i][j];
 					rho[i][j] += rhomulticomponent[numspec][i][j];
@@ -220,7 +197,7 @@ namespace Engine {
 		sqr_effrho[0][mNy + 1] = effrho[0][mNy + 1] * effrho[0][mNy + 1];
 		sqr_effrho[mNx + 1][0] = effrho[mNx + 1][0] * effrho[mNx + 1][0];
 		sqr_effrho[mNx + 1][mNy + 1] = effrho[mNx + 1][mNy + 1] * effrho[mNx + 1][mNy + 1];
-		for (int i = 0; i <= mNx + 1; i++) {
+		for (int i = 1; i <= mNx; i++) {
 			effrho[i][mNy + 1] = wettability1 * effrho[i][mNy];
 			effrho[i][0] = wettability1 * effrho[i][1];
 			sqr_effrho[i][mNy + 1] = effrho[i][mNy + 1] * effrho[i][mNy + 1];
@@ -266,37 +243,23 @@ namespace Engine {
 		for (int numspec = 0; numspec < number_of_species; numspec++)
 		{
 			double f_eq_spec[9], f_eq_spec_n[9];
+			double mom[9], mom_eq[9];
 			for (int i = 1; i <= mNx; i++)
 			{
 				for (int j = 1; j <= mNy; j++)
 				{
-					e_spec[numspec][i][j] -= s2 * (e_spec[numspec][i][j]
-						- 1. / 4. * alfa2 * rhomulticomponent[numspec][i][j]
-						- 1. / 6. * gamma2 * rhomulticomponent[numspec][i][j] * rhomulticomponent[numspec][i][j] *
-						(ux_spec[numspec][i][j] * ux_spec[numspec][i][j] + uy_spec[numspec][i][j] * uy_spec[numspec][i][j]));
-					epsilon_spec[numspec][i][j] -= s3 * (epsilon_spec[numspec][i][j]
-						- 1. / 4. * alfa3 * rhomulticomponent[numspec][i][j]
-						- 1. / 6. * gamma4 * rhomulticomponent[numspec][i][j] * rhomulticomponent[numspec][i][j] *
-						(ux_spec[numspec][i][j] * ux_spec[numspec][i][j] + uy_spec[numspec][i][j] * uy_spec[numspec][i][j]));
-					qx_spec[numspec][i][j] -= s5 * (qx_spec[numspec][i][j]
-						- 0.5 * c1 * rhomulticomponent[numspec][i][j] * ux_spec[numspec][i][j]);
-					qy_spec[numspec][i][j] -= s7 * (qy_spec[numspec][i][j]
-						- 0.5 * c1 * rhomulticomponent[numspec][i][j] * uy_spec[numspec][i][j]);
-					pxx_spec[numspec][i][j] -= s8 * (pxx_spec[numspec][i][j]
-						- 0.5 * gamma1 * rhomulticomponent[numspec][i][j] * rhomulticomponent[numspec][i][j] *
-						(ux_spec[numspec][i][j] * ux_spec[numspec][i][j] - uy_spec[numspec][i][j] * uy_spec[numspec][i][j]));
-					pxy_spec[numspec][i][j] -= s9 * (pxy_spec[numspec][i][j]
-						- 0.5 * gamma3 * rhomulticomponent[numspec][i][j] * rhomulticomponent[numspec][i][j] *
-						ux_spec[numspec][i][j] * uy_spec[numspec][i][j]);
-					moments[0] = rhomulticomponent[numspec][i][j];
-					moments[1] = e_spec[numspec][i][j];
-					moments[2] = epsilon_spec[numspec][i][j];
-					moments[3] = rhomulticomponent[numspec][i][j] * ux_spec[numspec][i][j];
-					moments[4] = qx_spec[numspec][i][j];
-					moments[5] = rhomulticomponent[numspec][i][j] * uy_spec[numspec][i][j];
-					moments[6] = qy_spec[numspec][i][j];
-					moments[7] = pxx_spec[numspec][i][j];
-					moments[8] = pxy_spec[numspec][i][j];
+					for (int k = 0; k < 9; k++)
+					{
+						mom[k] = 0;
+						for (int z = 0; z < 9; z++) {
+							mom[k] += M[k][z] * fmulticomponent[numspec][z][i][j];
+						}
+					}
+					eq_func_dimensional_moment(rhomulticomponent[numspec][i][j], ux[i][j], uy[i][j], mom_eq);
+					for (int k = 0; k < 9; k++)
+					{
+						mom[k] -= s_k[k] * (mom[k] - mom_eq[k]);
+					}
 					eq_func(rhomulticomponent[numspec][i][j], ux_spec[numspec][i][j], uy_spec[numspec][i][j], f_eq_spec);
 					eq_func(rhomulticomponent[numspec][i][j], ux_spec[numspec][i][j] + dux_force_spec[numspec][i][j],
 						uy_spec[numspec][i][j] + duy_force_spec[numspec][i][j], f_eq_spec_n);
@@ -304,7 +267,7 @@ namespace Engine {
 					{
 						fmulticomponent[numspec][k][i][j] = 0;
 						for (int z = 0; z < 9; z++) {
-							fmulticomponent[numspec][k][i][j] += M_1[k][z] * moments[z];
+							fmulticomponent[numspec][k][i][j] += M_1[k][z] * mom[z];
 						}
 						fmulticomponent[numspec][k][i][j] += f_eq_spec_n[k] - f_eq_spec[k];
 					}
@@ -326,5 +289,19 @@ namespace Engine {
 		f_eq[6] = rho / 36.0 * (du2 + (uy * delta_t / h - ux * delta_t / h) * (3.0 + 4.5 * (uy * delta_t / h - ux * delta_t / h)));
 		f_eq[7] = rho / 36.0 * (du2 - (ux * delta_t / h + uy * delta_t / h) * (3.0 - 4.5 * (ux * delta_t / h + uy * delta_t / h)));
 		f_eq[8] = rho / 36.0 * (du2 + (ux * delta_t / h - uy * delta_t / h) * (3.0 + 4.5 * (ux * delta_t / h - uy * delta_t / h)));
+	}
+
+
+	void SolverMRTDimensional2D::eq_func_dimensional_moment(double rho, double ux, double uy, double* moment_eq)
+	{
+		moment_eq[0] = rho;
+		moment_eq[1] = -2. * rho + 3. * rho * (ux * ux + uy * uy) * delta_t * delta_t / h / h;
+		moment_eq[2] = rho - 3. * rho * (ux * ux + uy * uy) * delta_t * delta_t / h / h;
+		moment_eq[3] = rho * ux * delta_t / h;
+		moment_eq[4] = -rho * ux * delta_t / h;
+		moment_eq[5] = rho * uy * delta_t / h;
+		moment_eq[6] = -rho * uy * delta_t / h;
+		moment_eq[7] = rho * (ux * ux - uy * uy) * delta_t * delta_t / h / h;
+		moment_eq[8] = rho * ux * uy * delta_t * delta_t / h / h;
 	}
 }

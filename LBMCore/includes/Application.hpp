@@ -35,6 +35,6 @@ namespace Engine {
 		bool mbCloseWindow = false;
 	protected:
 		std::shared_ptr<BasicSolver2D> Solver;
-		double* rho;
+		int time = 0;
 	};
 }

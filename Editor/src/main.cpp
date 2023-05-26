@@ -5,6 +5,9 @@
 #include <imgui_internal.h>
 #include <implot/implot.h>
 #include <vector>
+#include <algorithm>
+
+#pragma warning(disable: 6386)
 
 
 class Editor : public Engine::Application {
@@ -68,8 +71,8 @@ class Editor : public Engine::Application {
 		std::vector<std::vector<std::vector<double>>> rho = Solver->get_rhomulticomponent();
 
 		
-		static float scale_min = 0;
-		static float scale_max = 6.3f;
+		double scale_min = Solver->get_min_rho();
+		double scale_max = Solver->get_max_rho();
 		static int numspec = 0;
 
 		static ImPlotColormap map = ImPlotColormap_Jet;
@@ -78,8 +81,8 @@ class Editor : public Engine::Application {
 		}
 		ImGui::SameLine();
 		ImGui::LabelText("##Colormap Index", "%s", "Change Colormap");
-		ImGui::SetNextItemWidth(225);
-		ImGui::DragFloatRange2("Min / Max", &scale_min, &scale_max, 0.01f, -20, 20);
+		
+		
 
 		static ImPlotAxisFlags axes_flags = ImPlotAxisFlags_Lock | ImPlotAxisFlags_NoGridLines | ImPlotAxisFlags_NoTickMarks;
 
@@ -89,23 +92,16 @@ class Editor : public Engine::Application {
 		int size_y = Solver->get_Ny();
 		const int all_size = (size_x + 2) * (size_y + 2);
 		double* values_rho = new double[all_size];
-		//static double values_rho [all_size];
-		int k = 0;
 		for (int j = 0; j < size_y + 2; j++) {
 			for (int i = 0; i < size_x + 2; i++) {
-				if (k > all_size)
-				{
-					std::cout << "Wrong razmer massiva" << std::endl;
-					break;
-				}
-				values_rho[k++] = rho[numspec][i][j];
+				values_rho[j * (size_x + 2) + i] = rho[numspec][i][j];
 			}
 		}
 
 		if (ImPlot::BeginPlot("##Heatmap2", ImVec2(600, 300))) {
 			ImPlot::SetupAxes(NULL, NULL, ImPlotAxisFlags_NoDecorations, ImPlotAxisFlags_NoDecorations);
-			ImPlot::SetupAxesLimits(0, size_x + 2, 0, size_y + 2);
-			ImPlot::PlotHeatmap("heat1", values_rho, size_y + 2, size_x + 2, 0, 0, NULL, ImPlotPoint(0, 0), ImPlotPoint(size_x + 2, size_y + 2));
+			ImPlot::SetupAxesLimits(0, size_x + 1, 0, size_y + 1);
+			ImPlot::PlotHeatmap("heat1", values_rho, size_y + 2, size_x + 2, 0, 0, NULL, ImPlotPoint(0, 0), ImPlotPoint(size_x + 1, size_y + 1));
 			ImPlot::EndPlot();
 		}
 		ImGui::SameLine();
@@ -119,9 +115,18 @@ class Editor : public Engine::Application {
 
 	virtual void onUiDraw() override
 	{
+		double scale_min = Solver->get_min_rho();
+		double scale_max = Solver->get_max_rho();
 		setupDockspaceMenu();
 		ImGui::Begin("My name is window, ImGUI window");
-		ImGui::Text("Hello there adventurer!");
+		ImGui::SetNextItemWidth(225);
+		ImGui::InputDouble("min rho  ", &scale_min, 0.01f, 1.0f, "%.8f", ImGuiInputTextFlags_ReadOnly);
+		ImGui::SameLine();
+		ImGui::SetNextItemWidth(225);
+		ImGui::InputDouble("max rho  ", &scale_max, 0.01f, 1.0f, "%.8f", ImGuiInputTextFlags_ReadOnly);
+		ImGui::SameLine();
+		ImGui::SetNextItemWidth(225);
+		ImGui::InputInt("time", &time, 0.01f, 1.0f, ImGuiInputTextFlags_ReadOnly);
 		Draw_Heatmap();
 		ImGui::End();
 	}
@@ -133,7 +138,7 @@ int main()
 	system("mkdir VTK");
 	system("mkdir DATA");
 	auto pEditor = std::make_shared<Editor>();
-	int returnCode = pEditor->start(20, 10, 380, 2);
+	int returnCode = pEditor->start(100, 5, 400, 2);
 
 	return returnCode;
 }

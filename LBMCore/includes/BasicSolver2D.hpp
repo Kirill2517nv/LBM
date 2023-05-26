@@ -21,8 +21,12 @@ namespace Engine {
 		virtual void calculate_force() = 0;
 		virtual void collision_step() = 0;
 
+		virtual void check_rho();
+
 		const int get_Nx() { return mNx; }
 		const int get_Ny() { return mNy; }
+		const double get_max_rho() { return max_rho; }
+		const double get_min_rho() { return min_rho; }
 		std::vector<std::vector<std::vector<double>>> get_rhomulticomponent() { return rhomulticomponent; }
 
 	protected:
